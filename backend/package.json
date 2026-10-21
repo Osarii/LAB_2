@@ -1,0 +1,23 @@
+{
+  "name": "lab2-backend",
+  "version": "1.0.0",
+  "description": "Control de gastos compartidos con liquidaciones",
+  "type": "module",
+  "main": "src/server.mjs",
+  "scripts": {
+    "dev": "nodemon src/server.mjs",
+    "start": "node src/server.mjs"
+  },
+  "keywords": [],
+  "author": "Costa Rica",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
