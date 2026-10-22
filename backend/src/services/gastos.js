@@ -131,20 +131,27 @@ export async function calcularLiquidacionesMinimas(grupo_id) {
 }
 
 export async function obtenerGastosGrupo(grupo_id) {
-  const result = await pool.query(
-    `SELECT g.*,
-            p.nombre as pagado_por_nombre,
-            json_agg(json_build_object('persona_id', part.persona_id, 'monto', part.monto_asignado)) as participaciones
-     FROM gastos g
-     LEFT JOIN personas p ON g.pagado_por = p.id
-     LEFT JOIN participaciones part ON g.id = part.gasto_id
-     WHERE g.grupo_id = $1
-     GROUP BY g.id, p.nombre
-     ORDER BY g.fecha DESC`,
+  const gastos = await pool.query(
+    'SELECT id, grupo_id, descripcion, monto, pagado_por, fecha, tipo_reparto, categoria, created_at FROM gastos WHERE grupo_id = $1 ORDER BY fecha DESC',
     [grupo_id]
   );
 
-  return result.rows;
+  // Agregar nombre de quien pagó y participaciones
+  for (const gasto of gastos.rows) {
+    const personaResult = await pool.query(
+      'SELECT nombre FROM personas WHERE id = $1',
+      [gasto.pagado_por]
+    );
+    gasto.pagado_por_nombre = personaResult.rows[0]?.nombre || 'Desconocido';
+
+    const partsResult = await pool.query(
+      'SELECT persona_id, monto_asignado FROM participaciones WHERE gasto_id = $1',
+      [gasto.id]
+    );
+    gasto.participaciones = partsResult.rows;
+  }
+
+  return gastos.rows;
 }
 
 export async function obtenerResumen(grupo_id) {
