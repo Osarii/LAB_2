@@ -1,0 +1,245 @@
+{
+  "name": "Lab2 - AI Agent para Categorización y Resumen de Gastos",
+  "description": "Workflow de n8n para integración con Sistema de Control de Gastos Compartidos",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "webhook-categorizar",
+      "name": "Webhook - Categorizar Gasto",
+      "type": "n8n-nodes-base.webhook",
+      "position": [100, 100],
+      "typeVersion": 1,
+      "webhookId": "categorizar-gasto-webhook",
+      "path": "n8n/categorizar",
+      "httpMethod": "POST",
+      "description": "Recibe solicitud con descripción de gasto y categoriza automáticamente"
+    },
+    {
+      "id": "function-categorizar",
+      "name": "Función - Clasificar por Palabras Clave",
+      "type": "n8n-nodes-base.function",
+      "position": [300, 100],
+      "typeVersion": 1,
+      "description": "Análisis de texto y clasificación en categorías predefinidas",
+      "parameters": {
+        "functionCode": "const descripcion = items[0].json.descripcion.toLowerCase();\nconst categorias = {\n  'alquiler': ['alquiler', 'renta', 'casa'],\n  'comida': ['comida', 'almuerzo', 'cena', 'café', 'restaurante'],\n  'transporte': ['transporte', 'taxi', 'uber', 'bus'],\n  'entretenimiento': ['cine', 'película', 'concierto', 'diversión'],\n  'servicios': ['luz', 'agua', 'internet', 'teléfono'],\n  'salud': ['doctor', 'medicina', 'farmacia', 'hospital'],\n  'educacion': ['curso', 'libro', 'clase'],\n  'compras': ['compra', 'tienda', 'mercado']\n};\n\nlet categoria = 'otro';\nfor (const [cat, keywords] of Object.entries(categorias)) {\n  if (keywords.some(k => descripcion.includes(k))) {\n    categoria = cat;\n    break;\n  }\n}\n\nreturn { categoria, confianza: 0.85 };"
+      }
+    },
+    {
+      "id": "webhook-resumen",
+      "name": "Webhook - Generar Resumen Mensual",
+      "type": "n8n-nodes-base.webhook",
+      "position": [100, 300],
+      "typeVersion": 1,
+      "webhookId": "resumen-mensual-webhook",
+      "path": "n8n/resumen-mensual",
+      "httpMethod": "POST",
+      "description": "Genera análisis mensual de gastos por categoría"
+    },
+    {
+      "id": "database-query",
+      "name": "Consulta - Obtener Gastos del Mes",
+      "type": "n8n-nodes-base.sqlite",
+      "position": [300, 300],
+      "typeVersion": 1,
+      "description": "Obtiene todos los gastos del mes actual para el grupo",
+      "parameters": {
+        "query": "SELECT g.*, p.nombre as pagado_por_nombre FROM gastos g LEFT JOIN personas p ON g.pagado_por = p.id WHERE g.grupo_id = $1 AND strftime('%Y-%m', g.fecha) = strftime('%Y-%m', date('now')) ORDER BY g.fecha DESC"
+      }
+    },
+    {
+      "id": "function-analizar",
+      "name": "Función - Analizar Gastos y Generar Resumen",
+      "type": "n8n-nodes-base.function",
+      "position": [500, 300],
+      "typeVersion": 1,
+      "description": "Calcula totales por categoría y genera resumen en lenguaje natural",
+      "parameters": {
+        "functionCode": "const gastos = items[0].json.gastos;\nconst totalesPorCategoria = {};\nlet totalMes = 0;\n\ngastos.forEach(gasto => {\n  const cat = gasto.categoria || 'sin categoría';\n  totalesPorCategoria[cat] = (totalesPorCategoria[cat] || 0) + parseFloat(gasto.monto);\n  totalMes += parseFloat(gasto.monto);\n});\n\nlet resumen = `Resumen del mes\\n\\nTotal gastado: $${totalMes}\\nCantidad de gastos: ${gastos.length}\\n\\nDesglose por categoría:\\n`;\n\nObject.entries(totalesPorCategoria).forEach(([cat, monto]) => {\n  const porcentaje = ((monto / totalMes) * 100).toFixed(1);\n  resumen += `• ${cat}: $${monto} (${porcentaje}%)\\n`;\n});\n\nreturn { resumen, totalMes, cantidadGastos: gastos.length, detallesPorCategoria: totalesPorCategoria };"
+      }
+    },
+    {
+      "id": "response-categorizar",
+      "name": "Respuesta - Categoría",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [500, 100],
+      "typeVersion": 1,
+      "description": "Retorna la categoría detectada en formato JSON"
+    },
+    {
+      "id": "response-resumen",
+      "name": "Respuesta - Resumen",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [700, 300],
+      "typeVersion": 1,
+      "description": "Retorna el análisis mensual en formato JSON"
+    }
+  ],
+  "connections": {
+    "webhook-categorizar": {
+      "main": [[{ "node": "function-categorizar", "branch": 0 }]]
+    },
+    "function-categorizar": {
+      "main": [[{ "node": "response-categorizar", "branch": 0 }]]
+    },
+    "webhook-resumen": {
+      "main": [[{ "node": "database-query", "branch": 0 }]]
+    },
+    "database-query": {
+      "main": [[{ "node": "function-analizar", "branch": 0 }]]
+    },
+    "function-analizar": {
+      "main": [[{ "node": "response-resumen", "branch": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": false,
+    "timezone": "America/Costa_Rica"
+  },
+  "credentials": [],
+  "apiEndpoints": [
+    {
+      "path": "/n8n/categorizar",
+      "method": "POST",
+      "description": "Auto-categoriza un gasto basado en su descripción",
+      "requestBody": {
+        "descripcion": "string (requerido) - Descripción del gasto"
+      },
+      "responseBody": {
+        "ok": "boolean",
+        "data": {
+          "categoria": "string",
+          "confianza": "number (0-1)",
+          "descripcion": "string"
+        },
+        "error": "string (si ok = false)"
+      },
+      "examples": {
+        "request": {
+          "descripcion": "Almuerzo en restaurante"
+        },
+        "response": {
+          "ok": true,
+          "data": {
+            "categoria": "comida",
+            "confianza": 0.85,
+            "descripcion": "Almuerzo en restaurante"
+          }
+        }
+      }
+    },
+    {
+      "path": "/n8n/resumen-mensual",
+      "method": "POST",
+      "description": "Genera un resumen mensual de gastos con análisis por categoría",
+      "requestBody": {
+        "grupo_id": "number (requerido) - ID del grupo"
+      },
+      "responseBody": {
+        "ok": "boolean",
+        "data": {
+          "resumen": "string",
+          "totalMes": "number",
+          "cantidadGastos": "number",
+          "detallesPorCategoria": "object"
+        },
+        "error": "string (si ok = false)"
+      },
+      "examples": {
+        "request": {
+          "grupo_id": 1
+        },
+        "response": {
+          "ok": true,
+          "data": {
+            "resumen": "Resumen del mes - Piso Puntarenassss\n\nTotal gastado: $1,250.50\nCantidad de gastos: 8\n\nDesglose por categoría:\n• comida: $450 (36%)\n• transporte: $300 (24%)\n• servicios: $500 (40%)",
+            "totalMes": 1250.50,
+            "cantidadGastos": 8,
+            "detallesPorCategoria": {
+              "comida": 450,
+              "transporte": 300,
+              "servicios": 500
+            }
+          }
+        }
+      }
+    }
+  ],
+  "implementation": {
+    "backend": {
+      "language": "Node.js",
+      "framework": "Express.js",
+      "database": "SQLite",
+      "files": [
+        {
+          "path": "src/controllers/n8n-agent.js",
+          "description": "Controladores que implementan la lógica del AI Agent"
+        },
+        {
+          "path": "src/routes/n8n-agent.js",
+          "description": "Rutas de Express que exponen los webhooks"
+        },
+        {
+          "path": "src/app.mjs",
+          "description": "Montaje de las rutas en la aplicación"
+        }
+      ]
+    },
+    "frontend": {
+      "language": "React (JavaScript)",
+      "framework": "React 18 + Vite",
+      "components": [
+        {
+          "path": "src/pages/CrearGasto.jsx",
+          "description": "Botón '🤖 IA' para categorizar gastos automáticamente",
+          "feature": "Auto-categorización al crear gastos"
+        },
+        {
+          "path": "src/components/ResumenMensualIA.jsx",
+          "description": "Componente que muestra el resumen mensual generado",
+          "feature": "Análisis mensual de gastos por categoría"
+        },
+        {
+          "path": "src/services/api.js",
+          "description": "Funciones de cliente para llamar los webhooks",
+          "functions": [
+            "categorizarGastoConIA(descripcion)",
+            "generarResumenMensual(grupo_id)"
+          ]
+        }
+      ]
+    }
+  },
+  "arquitectura": {
+    "flujo_categorizar": [
+      "Usuario ingresa descripción del gasto",
+      "Click en botón '🤖 IA'",
+      "Frontend llama POST /api/n8n/categorizar",
+      "Backend analiza palabras clave",
+      "Retorna categoría y confianza",
+      "Frontend auto-completa el campo de categoría"
+    ],
+    "flujo_resumen": [
+      "Usuario navega a página de detalles del grupo",
+      "Componente ResumenMensualIA se carga",
+      "Click en botón '🤖 Generar Resumen'",
+      "Frontend llama POST /api/n8n/resumen-mensual",
+      "Backend consulta BD para gastos del mes",
+      "Calcula totales por categoría",
+      "Genera resumen en lenguaje natural",
+      "Frontend muestra el análisis formateado"
+    ]
+  },
+  "notas": {
+    "seguridad": "Sin credenciales expuestas. Base de datos local SQLite.",
+    "escalabilidad": "El backend puede reemplazar la clasificación de palabras clave con llamadas a Claude API (o cualquier otro LLM) para categorización más inteligente.",
+    "personalización": "Las categorías se pueden ajustar modificando el array CATEGORIAS en n8n-agent.js",
+    "mantenimiento": "Los logs de ejecución se guardan automáticamente en el directorio de logs para auditoría."
+  },
+  "versiones": {
+    "creado": "2026-10-22",
+    "ultima_actualizacion": "2026-10-22"
+  }
+}

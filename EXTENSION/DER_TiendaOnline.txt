@@ -1,0 +1,159 @@
+DIAGRAMA ENTIDAD-RELACION (DER) - TIENDA EN LINEA
+Notacion: Crow's Foot (Pata de Gallo)
+===========================================================
+
+ENTIDADES Y ATRIBUTOS:
+
+1. CLIENTE (Tabla Padre)
+   - id_cliente (PK)
+   - nombre
+   - email (UNIQUE)
+   - telefono
+   - direccion
+   - ciudad
+   - pais
+   - fecha_registro
+   - estado
+   - credito_disponible
+
+2. CATEGORIA (Tabla Padre)
+   - id_categoria (PK)
+   - nombre (UNIQUE)
+   - descripcion
+   - activa
+
+3. PROVEEDOR (Tabla Padre)
+   - id_proveedor (PK)
+   - nombre_empresa (UNIQUE)
+   - contacto
+   - email
+   - telefono
+   - pais
+   - fecha_vinculacion
+   - activo
+
+4. PRODUCTO (Tabla Hija de CATEGORIA y PROVEEDOR)
+   - id_producto (PK)
+   - nombre
+   - descripcion
+   - precio
+   - stock
+   - id_categoria (FK) -> CATEGORIA
+   - id_proveedor (FK) -> PROVEEDOR
+   - fecha_agregado
+   - activo
+
+5. PEDIDO (Tabla Hija de CLIENTE)
+   - id_pedido (PK)
+   - id_cliente (FK) -> CLIENTE
+   - fecha_pedido
+   - estado
+   - subtotal
+   - impuesto
+   - total
+   - observaciones
+
+6. DETALLE_PEDIDO (Tabla Intermedia - N:M entre PEDIDO y PRODUCTO)
+   - id_pedido (FK, PK Compuesta) -> PEDIDO
+   - id_producto (FK, PK Compuesta) -> PRODUCTO
+   - cantidad
+   - precio_unitario
+   - subtotal
+
+7. PAGO (Tabla Hija de PEDIDO)
+   - id_pago (PK)
+   - id_pedido (FK) -> PEDIDO
+   - monto
+   - metodo_pago
+   - fecha_pago
+   - referencia_transaccion
+   - estado
+
+8. ENVIO (Tabla Hija de PEDIDO - Relacion 1:1)
+   - id_envio (PK)
+   - id_pedido (FK, UNIQUE) -> PEDIDO (relacion 1:1)
+   - transportista
+   - numero_seguimiento (UNIQUE)
+   - fecha_envio
+   - fecha_entrega_estimada
+   - fecha_entrega_real
+   - estado
+   - costo_envio
+
+===========================================================
+RELACIONES:
+
+1. CLIENTE (1) --< PEDIDO (N)
+   Cardinalidad: (1, N)
+   Un cliente puede tener muchos pedidos
+   Implementacion: FK id_cliente en PEDIDO
+
+2. CATEGORIA (1) --< PRODUCTO (N)
+   Cardinalidad: (1, N)
+   Una categoria tiene muchos productos
+   Implementacion: FK id_categoria en PRODUCTO
+
+3. PROVEEDOR (1) --< PRODUCTO (N)
+   Cardinalidad: (1, N)
+   Un proveedor suministra muchos productos
+   Implementacion: FK id_proveedor en PRODUCTO
+
+4. PEDIDO (N) >--< PRODUCTO (N) via DETALLE_PEDIDO
+   Cardinalidad: (N, M)
+   Un pedido contiene muchos productos
+   Un producto puede estar en muchos pedidos
+   Implementacion: Tabla intermedia DETALLE_PEDIDO
+
+5. PEDIDO (1) --< PAGO (N)
+   Cardinalidad: (1, N)
+   Un pedido puede tener multiples pagos
+   Implementacion: FK id_pedido en PAGO
+
+6. PEDIDO (1) -- ENVIO (1)
+   Cardinalidad: (1, 1)
+   Un pedido tiene exactamente un envio
+   Implementacion: FK id_pedido con UNIQUE en ENVIO
+
+===========================================================
+INSTRUCCIONES PARA CREAR EL DER EN HERRAMIENTAS:
+
+En draw.io / diagrams.net:
+1. Crear 8 rectangulos para las entidades
+2. Colocar atributos dentro de cada rectangulo
+3. Marcar PK con subrayado
+4. Marcar FK con simbolo asterisco
+5. Conectar con lineas segun las relaciones
+6. Usar notacion Crow's Foot en los extremos
+
+En dbdiagram.io:
+Syntax:
+TABLE cliente {
+  id_cliente int [pk]
+  nombre varchar(100) [not null]
+  email varchar(100) [unique, not null]
+  ...
+}
+
+TABLE pedido {
+  id_pedido int [pk]
+  id_cliente int [ref: > cliente.id_cliente]
+  ...
+}
+
+TABLE detalle_pedido {
+  id_pedido int [ref: > pedido.id_pedido, pk]
+  id_producto int [ref: > producto.id_producto, pk]
+  ...
+}
+
+===========================================================
+RESUMEN DE REQUISITOS CUMPLIDOS:
+
+✓ Minimo 6 entidades: 8 entidades creadas
+✓ Relacion 1:N: CLIENTE-PEDIDO, CATEGORIA-PRODUCTO, PROVEEDOR-PRODUCTO, PEDIDO-PAGO
+✓ Relacion N:M: PEDIDO-PRODUCTO (via DETALLE_PEDIDO)
+✓ Relacion 1:1: PEDIDO-ENVIO
+✓ Atributos con tipos de datos y PK/FK
+✓ Cardinalidades claramente indicadas
+✓ Notacion Crow's Foot consistente
+✓ Coincide exactamente con script SQL

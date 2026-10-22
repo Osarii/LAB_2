@@ -1,0 +1,142 @@
+LAB 2 - SISTEMA DE CONTROL DE GASTOS COMPARTIDOS
+================================================
+
+RESUMEN EJECUTIVO
+-----------------
+Sistema web completo para gestionar gastos compartidos entre grupos de personas.
+Ideal para grupos de amigos, compañeros de piso o equipos de trabajo que desean
+controlar quién debe cuánto a quién.
+
+CARACTERISTICAS PRINCIPALES
+----------------------------
+
+1. GESTION DE GRUPOS
+   - Crear grupos con nombre
+   - Agregar miembros del grupo
+   - Ver lista de participantes
+   - Acceder a detalles y historial
+
+2. REGISTRO DE GASTOS
+   - Registrar gasto con descripcion y monto
+   - Seleccionar quien pagó
+   - Elegir tipo de reparto (igual, porcentaje, exacto)
+   - Definir participaciones individuales por miembro
+
+3. AUTO-CATEGORIZACION CON IA
+   - Click en boton "Generar"
+   - Sistema detecta categoria automaticamente
+   - Ejemplos:
+     * "Almuerzo en restaurante" → "Comida"
+     * "Taxi a casa" → "Transporte"
+     * "Pelcula de cine" → "Entretenimiento"
+
+4. RESUMEN MENSUAL CON IA
+   - Analiza todos los gastos del mes
+   - Agrupa por categoria
+   - Muestra en grafico de barras colorido
+   - Genera resumen en texto legible
+
+TECNOLOGIA UTILIZADA
+--------------------
+- Backend: Node.js + Express + SQLite
+- Frontend: React 18 + Vite
+- Integracion: N8N AI Agent (endpoints personalizados)
+- Diseño: CSS moderno con gradientes
+
+INTERFAZ VISUAL
+---------------
+- Header con gradiente morado-azul
+- Botones con efectos interactivos
+- Grafico de barras con colores por categoria
+- Diseño responsivo (funciona en mobile y desktop)
+- Colores modernos y coherentes
+
+FLUJOS DE N8N
+-------------
+
+Flujo 1: AUTO-CATEGORIZAR
+Input: Descripcion del gasto
+Proceso: Analizar palabras clave y clasificar
+Output: Categoria detectada con confianza
+
+Flujo 2: GENERAR RESUMEN MENSUAL
+Input: ID del grupo
+Proceso:
+  1. Consultar BD para gastos del mes
+  2. Agrupar por categoria
+  3. Calcular totales y porcentajes
+  4. Generar texto natural
+Output: Resumen con grafico
+
+COMO USAR
+---------
+
+1. Crear un grupo:
+   Click "+ Crear grupo" → Ingresar nombre → Seleccionar miembros → Confirmar
+
+2. Agregar un gasto:
+   Click "+ Nuevo gasto" → Ingresar descripcion → Ingresar monto →
+   Click "Generar" (para AI) → Seleccionar quien paga →
+   Definir participaciones → Click "Crear Gasto"
+
+3. Ver resumen:
+   Ir a detalles del grupo → Seccion "Resumen Mensual" →
+   Click "Generar Resumen" → Ver grafico y analisis
+
+CATEGORIAS SOPORTADAS
+---------------------
+1. Alquiler - Palabras: alquiler, renta, casa
+2. Comida - Palabras: comida, almuerzo, cena, cafe, restaurante
+3. Transporte - Palabras: taxi, uber, bus, transporte
+4. Entretenimiento - Palabras: cine, pelicula, concierto
+5. Servicios - Palabras: luz, agua, internet, telefono
+6. Salud - Palabras: doctor, medicina, farmacia
+7. Educacion - Palabras: curso, libro, clase
+8. Compras - Palabras: tienda, mercado, compra
+9. Otro - Para gastos sin categoria
+
+DATOS DE PRUEBA
+---------------
+Personas: Oscar, Maria, Juan, Sofia
+Grupos:
+  - Piso Puntarenassss (2 miembros)
+  - Piso San Jose (4 miembros)
+  - Viaje a Limon (3 miembros)
+
+ARCHIVOS INCLUIDOS
+------------------
+- README_LAB2.md: Documentacion completa
+- n8n-workflow.json: Estructura del workflow
+- N8N_WORKFLOW_GUIDE.md: Guia de integracion
+- VISUAL_IMPROVEMENTS.md: Cambios de diseño
+- ResumenMensualIA.jsx: Componente visual
+- CrearGasto.jsx: Formulario con boton IA
+- n8n-agent.js: Logica del AI Agent
+
+STATUS
+------
+✓ Backend: Funcional (puerto 3000)
+✓ Frontend: Responsivo (puerto 5174)
+✓ N8N: Endpoints operativos
+✓ Diseño: Moderno y coherente
+✓ Documentacion: Completa
+
+NOTAS IMPORTANTES
+-----------------
+- No requiere n8n instalado (endpoints propios)
+- Funciona 100% offline
+- SQLite se crea automaticamente
+- Compatible con MySQL y PostgreSQL
+- Sin emojis en documentacion
+- Base de datos coherente
+
+MEJORAS VISUALES
+----------------
+- Gradientes morado-azul profesionales
+- Botones con efectos hover
+- Tabla de barras con colores por categoria
+- Formularios mejoradores
+- Cards con sombra y borde
+- Responsive design
+
+Para mas informacion, ver README_LAB2.md
